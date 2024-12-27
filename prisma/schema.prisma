@@ -1,14 +1,91 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model LedgerItem {
+  id         Int      @id @default(autoincrement())
+  ledgerId   Int
+  quantity   Int
+  price      Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  productId  Int
+
+  ledger   Ledger   @relation(fields: [ledgerId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+}
+
+model Ledger {
+  id          Int           @id @default(autoincrement())
+  customerId  Int
+  totalAmount Float          @default(0)
+  businessId  Int
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  customer    Customer       @relation(fields: [customerId], references: [id])
+  business    Business       @relation(fields: [businessId], references: [id])
+  ledgerItems LedgerItem[]
+
+}
+
+model Customer {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  phone      String
+  address    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  businessId Int
+
+  business Business @relation(fields: [businessId], references: [id])
+  ledgers  Ledger[]
+}
+
+model Product {
+  id                   Int       @id @default(autoincrement())
+  businessId           Int
+  itemName             String
+  purchasePrice        Float
+  purchasePriceWithGst Boolean
+  sellingPrice         Float
+  sellingPriceWithGst  Boolean
+  hsnCode              String
+  MRP                  Float
+  IteamCode            String
+  PieceUnit            String
+  Quantity             Int
+  lowStockQuantity     Int
+  GSTRate              Float
+  iteamImage           String?
+  iteamDescription     String?
+  openingStock         Int
+  openingStockDate     DateTime
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  business             Business  @relation(fields: [businessId], references: [id])
+  ledgerItems          LedgerItem[]
+}
+
+
+
+model Business {
+  id        Int        @id @default(autoincrement())
+  name      String
+  address   String
+  email     String     @unique
+  phone     String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  customers Customer[]
+  products  Product[]
+  ledgers   Ledger[]
 }

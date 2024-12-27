@@ -1,19 +1,20 @@
-import express from "express";
+import express, { Response, Request } from "express";
 import dotenv from "dotenv";
-import apiRoutes from "./apiRoutes";
+import apiRoutes from "./utils/apiRoutes";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(express.json());
 
-// Routes
 app.use("/api", apiRoutes);
 
-// Start the server
+app.get("/test", (req: Request, res: Response) => {
+	res.json({ msg: "Hi" });
+});
+
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+	console.log(new Date() + `Server is running on http://localhost:${PORT}`);
 });

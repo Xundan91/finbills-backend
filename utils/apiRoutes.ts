@@ -1,6 +1,6 @@
 import express from "express";
-import businessRoutes from "../routes/buisness";
-import productRoutes from "../routes/Products";
+import businessRoutes from "../routes/business";
+import productRoutes from "../routes/product";
 
 const router = express.Router();
 

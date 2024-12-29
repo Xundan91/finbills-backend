@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Product" ALTER COLUMN "gst_rate" SET DEFAULT 'ZERO',
+ALTER COLUMN "unit" SET DEFAULT 'PIECE';

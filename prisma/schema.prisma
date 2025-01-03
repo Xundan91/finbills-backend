@@ -1,7 +1,10 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
 =======
 >>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
 =======
@@ -13,7 +16,11 @@ generator client {
 datasource db {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   provider = "postgresql" // Adjust according to your database
+=======
+  provider = "postgresql"
+>>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
 =======
   provider = "postgresql"
 >>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
@@ -64,6 +71,7 @@ model Customer {
   ledgers  Ledger[]
 }
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 enum GstRate {
@@ -159,6 +167,8 @@ model Business {
 =======
 =======
 >>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
+=======
+>>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
 model Product {
   id                   Int       @id @default(autoincrement())
   businessId           Int
@@ -192,6 +202,9 @@ model Business {
   name      String
   address   String
 <<<<<<< HEAD
+<<<<<<< HEAD
+>>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
+=======
 >>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
 =======
 >>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea

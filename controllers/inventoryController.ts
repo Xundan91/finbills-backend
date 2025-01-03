@@ -58,9 +58,7 @@ const ProductSchema = z.object({
   itemName: z.string().min(1, "Item name is required"),
   description: z.string().min(1, "Description is required"),
   p_price: z.number().optional().default(0),  
-  p_w_gst: z.boolean().optional().default(false),
-  s_price: z.number().optional().default(0), 
-  s_w_gst: z.boolean().optional().default(false), 
+  s_price: z.number().optional().default(0),  
   mrp: z.number().optional().default(0),     
   gst_rate: GstRateEnum.optional().default('ZERO'),
   barcode: z.string().min(1, "Barcode is required"),
@@ -86,10 +84,8 @@ export const addProducts = async (req: any, res: any) => {
         business: { connect: { id: Id } },
         itemName: validatedData.itemName,
         description: validatedData.description,
-        p_price: validatedData.p_price,  
-        p_w_gst: validatedData.p_w_gst,  
-        s_price: validatedData.s_price,  
-        s_w_gst: validatedData.s_w_gst,  
+        p_price: validatedData.p_price,   
+        s_price: validatedData.s_price,    
         mrp: validatedData.mrp,          
         gst_rate: validatedData.gst_rate,  
         barcode: validatedData.barcode,
@@ -114,3 +110,7 @@ export const addProducts = async (req: any, res: any) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+
+
+

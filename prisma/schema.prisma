@@ -1,32 +1,9 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-
-
-=======
->>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
-=======
->>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
-=======
->>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-  provider = "postgresql" // Adjust according to your database
-=======
-  provider = "postgresql"
->>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
-=======
-  provider = "postgresql"
->>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
-=======
-  provider = "postgresql"
->>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
+  provider = "postgresql" 
   url      = env("DATABASE_URL")
 }
 
@@ -71,9 +48,6 @@ model Customer {
   ledgers  Ledger[]
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 enum GstRate {
   ZERO             
   ZERO_POINT_ONE   
@@ -139,9 +113,7 @@ model Product {
   itemName        String     
   description     String?
   p_price         Float?
-  p_w_gst         Boolean?   @default(false)
   s_price         Float?
-  s_w_gst         Boolean?   @default(false)
   mrp             Float?     @default(0)
   hsn             String?    
   gst_rate        GstRate   @default(ZERO)
@@ -164,56 +136,5 @@ model Business {
   id        Int        @id @default(autoincrement())
   b_name    String
   address   String?
-=======
-=======
->>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
-=======
->>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
-model Product {
-  id                   Int       @id @default(autoincrement())
-  businessId           Int
-  itemName             String
-  purchasePrice        Float
-  purchasePriceWithGst Boolean
-  sellingPrice         Float
-  sellingPriceWithGst  Boolean
-  hsnCode              String
-  MRP                  Float
-  IteamCode            String
-  PieceUnit            String
-  Quantity             Int
-  lowStockQuantity     Int
-  GSTRate              Float
-  iteamImage           String?
-  iteamDescription     String?
-  openingStock         Int
-  openingStockDate     DateTime
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
 
-  business             Business  @relation(fields: [businessId], references: [id])
-  ledgerItems          LedgerItem[]
-}
-
-
-
-model Business {
-  id        Int        @id @default(autoincrement())
-  name      String
-  address   String
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
-=======
->>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
-=======
->>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
-  email     String     @unique
-  phone     String
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  customers Customer[]
-  products  Product[]
-  ledgers   Ledger[]
 }

@@ -1,11 +1,18 @@
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
+<<<<<<< HEAD
   provider = "postgresql" // Adjust according to your database
+=======
+  provider = "postgresql"
+>>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
   url      = env("DATABASE_URL")
 }
 
@@ -50,6 +57,7 @@ model Customer {
   ledgers  Ledger[]
 }
 
+<<<<<<< HEAD
 enum GstRate {
   ZERO             
   ZERO_POINT_ONE   
@@ -140,6 +148,40 @@ model Business {
   id        Int        @id @default(autoincrement())
   b_name    String
   address   String?
+=======
+model Product {
+  id                   Int       @id @default(autoincrement())
+  businessId           Int
+  itemName             String
+  purchasePrice        Float
+  purchasePriceWithGst Boolean
+  sellingPrice         Float
+  sellingPriceWithGst  Boolean
+  hsnCode              String
+  MRP                  Float
+  IteamCode            String
+  PieceUnit            String
+  Quantity             Int
+  lowStockQuantity     Int
+  GSTRate              Float
+  iteamImage           String?
+  iteamDescription     String?
+  openingStock         Int
+  openingStockDate     DateTime
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  business             Business  @relation(fields: [businessId], references: [id])
+  ledgerItems          LedgerItem[]
+}
+
+
+
+model Business {
+  id        Int        @id @default(autoincrement())
+  name      String
+  address   String
+>>>>>>> 560d77e94b706fab8706a74e8b7ab108c19798ea
   email     String     @unique
   phone     String
   createdAt DateTime   @default(now())

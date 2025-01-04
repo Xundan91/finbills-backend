@@ -64,7 +64,8 @@ model Product {
   itemName        String     
   description     String?
   p_price         Float?
-  s_price         Float?
+  s_price         Float
+  stock_number    Int
   mrp             Float?     @default(0)
   hsn             String?    
   gst_rate        GstRate   @default(ZERO)

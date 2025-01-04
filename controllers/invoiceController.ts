@@ -13,6 +13,12 @@ interface fullCustomerDetailSchema extends customerSchema {
 	businessId: number;
 }
 
+interface ledgerItemInfoSchema {
+	price: number;
+	quantity: number;
+	productId: number;
+}
+
 const customerZodSchema = z.object({
 	name: z.string(),
 	email: z.string(),
@@ -28,12 +34,127 @@ export const genInvoice = async (req: Request, res: Response) => {
 };
 
 export const sellItem = async (req: Request, res: Response) => {
-	try {
-	} catch (err) {
-		res.status(500).json({
-			msg: "Failed",
-		});
+	const businessId = Number(req.headers.businessId);
+	const productsInfo: Array<ledgerItemInfoSchema> = req.body;
+
+	if (productsInfo) {
+		try {
+			const customerId = Number(req.params.customerId);
+			let totalAmount = productsInfo.reduce(
+				(sum: number, product: ledgerItemInfoSchema) => sum + product.price,
+				0
+			);
+
+			const ledger = await prisma.ledger.create({
+				data: {
+					customerId,
+					totalAmount,
+					businessId,
+				},
+			});
+			if (ledger) {
+				try {
+					await Promise.all(
+						productsInfo.map(async (product: ledgerItemInfoSchema) => {
+							const legderItem = await prisma.ledgerItem.create({
+								data: {
+									ledgerId: ledger.id,
+									quantity: product.quantity,
+									price: product.price,
+									productId: product.productId,
+								},
+							});
+
+							await prisma.product.update({
+								where: { id: product.productId },
+								data: {
+									stock_number: {
+										decrement: product.quantity,
+									},
+								},
+							});
+						})
+					);
+				} catch (err) {
+					throw new Error(`Nhi hua Process Ma chud gyi iski`);
+				}
+			} else {
+				res.status(411).json({
+					msg: "Failed! Ledger not created",
+				});
+			}
+		} catch (err) {
+			console.log(`Error: ${err}`);
+			res.status(500).json({
+				msg: "Failed",
+			});
+		}
 	}
+	// if (productIds) {
+	// 	try {
+	// 		const customerId = Number(req.params.customerId);
+	// 		if (customerId) {
+	// 			const productPromise = productIds.map(async (p_id: number) => {
+	// 				const product = await prisma.product.findUnique({
+	// 					where: {
+	// 						id: p_id,
+	// 					},
+	// 				});
+	// 				if (product) {
+	// 					return product.s_price;
+	// 				} else {
+	// 					throw new Error(`Product with id ${p_id} not found`);
+	// 				}
+	// 			});
+	// 			const productPrices = await Promise.all(productPromise);
+	// 			const totalAmount = productPrices.reduce(
+	// 				(sum, price) => sum + price,
+	// 				0
+	// 			);
+	// 			if (totalAmount) {
+	// 				const ledger = await prisma.ledger.create({
+	// 					data: {
+	// 						customerId,
+	// 						totalAmount,
+	// 						businessId,
+	// 					},
+	// 				});
+	// 				if (ledger) {
+	//           productIds.map( async (p_id: number) => {
+	//             const product = await prisma.product.findUnique({
+	//               where: {
+	//                 id: p_id
+	//               }
+	//             })
+	//             if(product) {
+
+	//             }
+	//           })
+	// 				} else {
+	// 					res.status(411).json({
+	// 						msg: "Ledger not created",
+	// 					});
+	// 				}
+	// 			} else {
+	// 				res.status(411).json({
+	// 					msg: "Something gone wrong",
+	// 				});
+	// 			}
+	// 		} else {
+	// 			res.status(411).json({
+	// 				msg: "Customer not Found",
+	// 			});
+	// 		}
+	// 	} catch (err) {
+	// 		res.status(500).json({
+	// 			msg: "Failed",
+	// 		});
+	// 	}
+	// } else {
+	// 	res.status(500).json({
+	// 		msg: "Failed",
+	// 	});
+	// }
 };
 
 export const addCustomer = async (req: Request, res: Response) => {

@@ -48,6 +48,55 @@ model Customer {
   ledgers  Ledger[]
 }
 
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+}
+
+model Product {
+  id              Int       @id @default(autoincrement())
+  businessId      Int       
+  categoryId      Int?      
+  itemName        String     
+  description     String?
+  p_price         Float?
+  s_price         Float?
+  mrp             Float?     @default(0)
+  hsn             String?    
+  gst_rate        GstRate   @default(ZERO)
+  barcode         String?     
+  unit            Unit       @default(PIECE)
+  alert_quantity  Float?     @default(0)
+  opening_stock   Float      @default(0)
+  op_stock_date   DateTime  
+  img_url         String?    
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  business        Business   @relation(fields: [businessId], references: [id])
+  category        Category?  @relation(fields: [categoryId], references: [id])
+  ledgerItems     LedgerItem[]
+}
+
+
+model Business {
+  id        Int        @id @default(autoincrement())
+  name      String
+  address   String
+  email     String     @unique
+  phone     String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  customers Customer[]
+  products  Product[]
+  ledgers   Ledger[]
+}
+
 enum GstRate {
   ZERO             
   ZERO_POINT_ONE   
@@ -96,45 +145,4 @@ enum Unit {
   TON
   RATTI
   TROLLEY_TRUCK
-}
-
-model Category {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
-}
-
-model Product {
-  id              Int       @id @default(autoincrement())
-  businessId      Int       
-  categoryId      Int?      
-  itemName        String     
-  description     String?
-  p_price         Float?
-  s_price         Float?
-  mrp             Float?     @default(0)
-  hsn             String?    
-  gst_rate        GstRate   @default(ZERO)
-  barcode         String?     
-  unit            Unit       @default(PIECE)
-  alert_quantity  Float?     @default(0)
-  opening_stock   Float      @default(0)
-  op_stock_date   DateTime  
-  img_url         String?    
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-
-  business        Business   @relation(fields: [businessId], references: [id])
-  category        Category?  @relation(fields: [categoryId], references: [id])
-  ledgerItems     LedgerItem[]
-}
-
-
-model Business {
-  id        Int        @id @default(autoincrement())
-  b_name    String
-  address   String?
-
 }

@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql" 
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -16,8 +16,8 @@ model LedgerItem {
   updatedAt  DateTime @updatedAt
   productId  Int
 
-  ledger   Ledger   @relation(fields: [ledgerId], references: [id])
-  product  Product  @relation(fields: [productId], references: [id])
+  ledger   Ledger   @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Ledger {
@@ -28,10 +28,9 @@ model Ledger {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  customer    Customer       @relation(fields: [customerId], references: [id])
-  business    Business       @relation(fields: [businessId], references: [id])
+  customer    Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  business    Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
   ledgerItems LedgerItem[]
-
 }
 
 model Customer {
@@ -44,45 +43,43 @@ model Customer {
   updatedAt  DateTime @updatedAt
   businessId Int
 
-  business Business @relation(fields: [businessId], references: [id])
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   ledgers  Ledger[]
 }
 
-
 model Category {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
+  id        Int       @id @default(autoincrement())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
 }
 
 model Product {
   id              Int       @id @default(autoincrement())
-  businessId      Int       
-  categoryId      Int?      
-  itemName        String     
+  businessId      Int
+  categoryId      Int?
+  itemName        String
   description     String?
-  p_price         Float?
+  p_price         Float?    @default(0)
   s_price         Float
-  stock_number    Int
-  mrp             Float?     @default(0)
-  hsn             String?    
+  stock_number    Int?      @default(0)
+  mrp             Float?    @default(0)
+  hsn             String?
   gst_rate        GstRate   @default(ZERO)
-  barcode         String?     
-  unit            Unit       @default(PIECE)
-  alert_quantity  Float?     @default(0)
-  opening_stock   Float      @default(0)
-  op_stock_date   DateTime  
-  img_url         String?    
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  barcode         String?
+  unit            Unit      @default(PIECE)
+  alert_quantity  Float?    @default(0)
+  opening_stock   Float     @default(0)
+  op_stock_date   DateTime
+  img_url         String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  business        Business   @relation(fields: [businessId], references: [id])
-  category        Category?  @relation(fields: [categoryId], references: [id])
+  business        Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  category        Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   ledgerItems     LedgerItem[]
 }
-
 
 model Business {
   id        Int        @id @default(autoincrement())
@@ -99,19 +96,19 @@ model Business {
 }
 
 enum GstRate {
-  ZERO             
-  ZERO_POINT_ONE   
-  ZERO_POINT_TWO_FIVE 
-  ONE_POINT_FIVE   
-  THREE            
-  FIVE            
-  SIX             
-  TWELVE           
-  THIRTEEN_POINT_EIGHT 
-  FOURTEEN        
-  EIGHTEEN         
-  TWENTY_EIGHT    
-  TAX_EXEMPTED     
+  ZERO
+  ZERO_POINT_ONE
+  ZERO_POINT_TWO_FIVE
+  ONE_POINT_FIVE
+  THREE
+  FIVE
+  SIX
+  TWELVE
+  THIRTEEN_POINT_EIGHT
+  FOURTEEN
+  EIGHTEEN
+  TWENTY_EIGHT
+  TAX_EXEMPTED
 }
 
 enum Unit {

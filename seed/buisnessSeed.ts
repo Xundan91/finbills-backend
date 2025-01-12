@@ -2,20 +2,20 @@ import { Router, Request, Response } from "express";
 import { z } from "zod";
 import prisma from "../prisma";
 
-const addbuisness = Router();
+const addbusiness = Router();
 
-const buisnessSchema = z.object({
+const businessSchema = z.object({
 	name: z.string(),
 	address: z.string(),
 	email: z.string().email(),
 	phone: z.string().length(10),
 });
 
-addbuisness.get("/", (req, res) => {
+addbusiness.get("/", (req, res) => {
 	res.json("hi");
 });
 
-addbuisness.post("/", async (req: Request, res: Response) => {
+addbusiness.post("/", async (req: Request, res: Response) => {
 	const {
 		name,
 		phone,
@@ -24,19 +24,27 @@ addbuisness.post("/", async (req: Request, res: Response) => {
 	}: { name: string; phone: string; email: string; address: string } = req.body;
 
 	try {
-		const validateBuisnessSch = buisnessSchema.safeParse(req.body);
+		const validateBuisnessSch = businessSchema.safeParse(req.body);
 		if (validateBuisnessSch.success) {
+			const buisnessExist = await prisma.business.findUnique({
+				where: {
+					email,
+				},
+			});
+			if (buisnessExist) {
+				res.json({ msg: `Business already cerated` });
+			}
 			const buisness = await prisma.business.create({
 				data: validateBuisnessSch.data,
 			});
 			if (buisness) {
 				res.json({ msg: "SUCCESS", buisness });
 			} else {
-				res.status(411).json({ msg: "Fuck you again" });
+				res.status(411).json({ msg: "business not created" });
 			}
 		} else {
 			res.status(411).json({
-				msg: "Fck you",
+				msg: "Validation failed",
 			});
 		}
 	} catch (e) {
@@ -47,4 +55,4 @@ addbuisness.post("/", async (req: Request, res: Response) => {
 	}
 });
 
-export default addbuisness;
+export default addbusiness;

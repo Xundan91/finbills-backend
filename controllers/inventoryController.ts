@@ -9,7 +9,7 @@ const zodCategorySchema = z.object({
 });
 
 const zodProductSchema = z.object({
-	categoryId: z.number(),
+	id: z.number().optional(),
 	itemName: z.string().min(1, "Item name is required"),
 	description: z.string().min(1, "Description is required"),
 	p_price: z.number(),
@@ -79,7 +79,7 @@ export const fetchCategory = async (req: Request, res: Response) => {
 export const addProducts = async (req: Request, res: Response) => {
 	const productDetails: productSchema = req.body();
 	const businessId = Number(req.headers.businessId);
-	const categoryId = req.params;
+	const categoryId = Number(req.params["categoryId"]);
 	const validateProduct = zodProductSchema.safeParse(productDetails);
 
 	if (validateProduct.success) {
@@ -89,32 +89,36 @@ export const addProducts = async (req: Request, res: Response) => {
 					businessId,
 				},
 			});
+			let itemExist: boolean = false;
 			allProduct.forEach(async (product) => {
 				if (product.itemName == validateProduct.data.itemName) {
-					res.json({
-						msg: "Item already exist",
-					});
-				} else {
-					const fullProductDetail = {
-						businessId,
-						...validateProduct.data,
-					};
-					const product = await prisma.product.create({
-						data: fullProductDetail,
-					});
-
-					if (product) {
-						res.json({
-							msg: "Sucess",
-							product,
-						});
-					} else {
-						res.status(411).json({
-							msg: "Product failed to add",
-						});
-					}
+					itemExist = true;
 				}
 			});
+			if (itemExist) {
+				res.json({
+					msg: "Item already exist",
+				});
+			} else {
+				const fullProductDetail = {
+					businessId,
+					categoryId,
+					...validateProduct.data,
+				};
+				const product = await prisma.product.create({
+					data: fullProductDetail,
+				});
+				if (product) {
+					res.json({
+						msg: "Success",
+						product,
+					});
+				} else {
+					res.status(411).json({
+						msg: "Failed! product not created",
+					});
+				}
+			}
 		} catch (err) {
 			console.log(`Error: ${err}`);
 			res.status(500).json({ msg: "Failed" });
@@ -142,6 +146,49 @@ export const getProducts = async (req: Request, res: Response) => {
 		} else {
 			res.status(411).json({
 				msg: "Failed",
+			});
+		}
+	} catch (err) {
+		res.status(500).json({
+			msg: `Error: ${err}`,
+		});
+	}
+};
+
+export const updateProductDetail = async (req: Request, res: Response) => {
+	const businessId = Number(req.headers.businessId);
+	const productDetail: productSchema = req.body();
+	const productId = productDetail.id;
+	try {
+		const allProducts = await prisma.product.findMany({
+			where: {
+				businessId,
+			},
+		});
+		if (allProducts) {
+			allProducts.forEach(async (product) => {
+				if (product.id == productId) {
+					const updateProduct = await prisma.product.update({
+						where: {
+							id: productId,
+						},
+						data: productDetail,
+					});
+					if (updateProduct) {
+						res.json({
+							msg: "Sucess",
+							updateProduct,
+						});
+					} else {
+						res.status(411).json({
+							msg: "Failed",
+						});
+					}
+				}
+			});
+		} else {
+			res.status(411).json({
+				msg: "Couldn't fetched Products",
 			});
 		}
 	} catch (err) {

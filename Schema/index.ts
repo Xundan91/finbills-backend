@@ -1,5 +1,5 @@
 export interface productSchema {
-	categoryId: number;
+	id?: number;
 	itemName: string;
 	description: string;
 	p_price: number;

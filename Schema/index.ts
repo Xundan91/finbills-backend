@@ -1,14 +1,14 @@
 export interface productSchema {
-	id?: number;
 	itemName: string;
 	description: string;
 	p_price: number;
 	s_price: number;
 	stock_number: number;
 	mrp: number;
+	gst_rate: number;
 	barcode: string;
 	opening_stock: number;
-	img: string;
+	img_url: string;
 }
 
 export interface categorySchema {

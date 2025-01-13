@@ -2,7 +2,6 @@ import { z } from "zod";
 import { Response, Request } from "express";
 import prisma from "../prisma";
 import { productSchema, categorySchema } from "../Schema";
-import { empty } from "@prisma/client/runtime/library";
 
 const zodCategorySchema = z.object({
 	name: z.string(),
@@ -10,16 +9,15 @@ const zodCategorySchema = z.object({
 });
 
 const zodProductSchema = z.object({
-	id: z.number().optional(),
-	itemName: z.string().min(1, "Item name is required"),
-	description: z.string().min(1, "Description is required"),
+	itemName: z.string(),
+	description: z.string(),
 	p_price: z.number(),
 	s_price: z.number(),
 	stock_number: z.number(),
 	mrp: z.number(),
 	gst_rate: z.number(),
-	barcode: z.string().min(1, "Barcode is required"),
-	img_url: z.string().url("Invalid image URL"),
+	barcode: z.string(),
+	img_url: z.string(),
 });
 
 export const addCategory = async (
@@ -119,46 +117,58 @@ export const fetchCategory = async (req: Request, res: Response) => {
 	}
 };
 
-export const addProducts = async (req: Request, res: Response) => {
-	const productDetails: productSchema = req.body();
-	const businessId = Number(req.headers.businessId);
+export const addProducts = async (
+	req: Request,
+	res: Response
+): Promise<any> => {
+	const productDetails: productSchema = req.body;
+	const businessId = Number(req.headers.businessid);
 	const categoryId = Number(req.params["categoryId"]);
 	const validateProduct = zodProductSchema.safeParse(productDetails);
 
 	if (validateProduct.success) {
+		const fullProductDetail = {
+			businessId,
+			categoryId,
+			...validateProduct.data,
+		};
 		try {
 			const allProduct = await prisma.product.findMany({
 				where: {
 					businessId,
+					categoryId,
 				},
 			});
-			let itemExist: boolean = false;
-			allProduct.forEach(async (product) => {
-				if (product.itemName == validateProduct.data.itemName) {
-					itemExist = true;
-				}
-			});
-			if (itemExist) {
-				res.json({
-					msg: "Item already exist",
-				});
-			} else {
-				const fullProductDetail = {
-					businessId,
-					categoryId,
-					...validateProduct.data,
-				};
+			if (allProduct.length === 0) {
 				const product = await prisma.product.create({
 					data: fullProductDetail,
 				});
 				if (product) {
 					res.json({
-						msg: "Success",
-						product,
+						msg: "Succcess",
 					});
 				} else {
+					res.status(500).json({
+						msg: "Failed",
+					});
+				}
+			} else {
+				const productExist = allProduct.some(
+					(product) => product.itemName === validateProduct.data.itemName
+				);
+				if (productExist) {
+					return res.status(400).json({
+						msg: `Product already exists`,
+					});
+				}
+				const product = await prisma.product.create({
+					data: fullProductDetail,
+				});
+				if (product) {
+					res.json({ msg: "Success" });
+				} else {
 					res.status(411).json({
-						msg: "Failed! product not created",
+						msg: "Failed",
 					});
 				}
 			}
@@ -198,47 +208,47 @@ export const getProducts = async (req: Request, res: Response) => {
 	}
 };
 
-export const updateProductDetail = async (req: Request, res: Response) => {
-	const businessId = Number(req.headers.businessId);
-	const productDetail: productSchema = req.body();
-	const productId = productDetail.id;
-	try {
-		const allProducts = await prisma.product.findMany({
-			where: {
-				businessId,
-			},
-		});
-		if (allProducts) {
-			allProducts.forEach(async (product) => {
-				if (product.id == productId) {
-					const updateProduct = await prisma.product.update({
-						where: {
-							id: productId,
-						},
-						data: productDetail,
-					});
-					if (updateProduct) {
-						res.json({
-							msg: "Sucess",
-							updateProduct,
-						});
-					} else {
-						res.status(411).json({
-							msg: "Failed",
-						});
-					}
-				}
-			});
-		} else {
-			res.status(411).json({
-				msg: "Couldn't fetched Products",
-			});
-		}
-	} catch (err) {
-		res.status(500).json({
-			msg: `Error: ${err}`,
-		});
-	}
-};
+// export const updateProductDetail = async (req: Request, res: Response) => {
+// 	const businessId = Number(req.headers.businessId);
+// 	const productDetail: productSchema = req.body();
+// 	const productId = productDetail.id;
+// 	try {
+// 		const allProducts = await prisma.product.findMany({
+// 			where: {
+// 				businessId,
+// 			},
+// 		});
+// 		if (allProducts) {
+// 			allProducts.forEach(async (product) => {
+// 				if (product.id == productId) {
+// 					const updateProduct = await prisma.product.update({
+// 						where: {
+// 							id: productId,
+// 						},
+// 						data: productDetail,
+// 					});
+// 					if (updateProduct) {
+// 						res.json({
+// 							msg: "Sucess",
+// 							updateProduct,
+// 						});
+// 					} else {
+// 						res.status(411).json({
+// 							msg: "Failed",
+// 						});
+// 					}
+// 				}
+// 			});
+// 		} else {
+// 			res.status(411).json({
+// 				msg: "Couldn't fetched Products",
+// 			});
+// 		}
+// 	} catch (err) {
+// 		res.status(500).json({
+// 			msg: `Error: ${err}`,
+// 		});
+// 	}
+// };
 
 export const feedThroughInvoice = async (req: Request, res: Response) => {};

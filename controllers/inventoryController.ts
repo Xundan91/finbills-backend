@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Response, Request } from "express";
 import prisma from "../prisma";
 import { productSchema, categorySchema } from "../Schema";
+import { empty } from "@prisma/client/runtime/library";
 
 const zodCategorySchema = z.object({
 	name: z.string(),
@@ -21,39 +22,67 @@ const zodProductSchema = z.object({
 	img_url: z.string().url("Invalid image URL"),
 });
 
-export const addCategory = async (req: Request, res: Response) => {
-	const businessId = Number(req.headers.businessId);
+export const addCategory = async (
+	req: Request,
+	res: Response
+): Promise<any> => {
+	console.log(req.headers);
+	const businessId = Number(req.headers.businessid);
+	console.log(businessId + " " + typeof businessId);
 	const categoryDetails: categorySchema = req.body;
 	const validateCategory = zodCategorySchema.safeParse(categoryDetails);
 
 	if (validateCategory.success) {
+		const fullCategory = {
+			businessId,
+			...validateCategory.data,
+		};
 		try {
 			const existingCategories = await prisma.category.findMany({
 				where: {
 					businessId,
 				},
 			});
-			if (existingCategories) {
-				const fullCategory = {
-					businessId,
-					...validateCategory.data,
-				};
-				const promiseCreatiton = existingCategories.map(async (category) => {
-					if (category.hsn !== categoryDetails.hsn) {
-						await prisma.category.create({
-							data: fullCategory,
-						});
-					}
+			console.log(existingCategories);
+			if (existingCategories.length === 0) {
+				const category = await prisma.category.create({
+					data: fullCategory,
 				});
-				await Promise.all(promiseCreatiton);
-
-				res.json({
-					msg: "Success",
-				});
+				if (category) {
+					res.json({
+						msg: "Sucess",
+						category,
+					});
+				} else {
+					res.status(411).json({
+						msg: "Something went wrong",
+					});
+				}
 			} else {
-				res.status(500).json({
-					msg: `Couldn't fetch categories`,
+				const hsnExists = existingCategories.some(
+					(category) => category.hsn === validateCategory.data.hsn
+				);
+
+				if (hsnExists) {
+					return res
+						.status(409)
+						.json({ msg: "Category with this HSN already exists" });
+				}
+
+				const category = await prisma.category.create({
+					data: fullCategory,
 				});
+
+				if (category) {
+					res.json({
+						msg: "Success",
+						category,
+					});
+				} else {
+					res.status(411).json({
+						msg: "Something went Wrong",
+					});
+				}
 			}
 		} catch (err) {
 			console.log(`Error: ${err}`);

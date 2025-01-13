@@ -3,7 +3,7 @@ import * as productEndPoints from "../controllers/inventoryController";
 import { sellItem } from "../controllers/invoiceController";
 const router = express.Router();
 
-router.post("/addItems/:businessId", productEndPoints.addProducts);
+router.post("/addItems", productEndPoints.addProducts);
 router.post("/addCategory", productEndPoints.addCategory);
 router.get("/getCategory", productEndPoints.fetchCategory);
 router.post("/addProduct", productEndPoints.addProducts);

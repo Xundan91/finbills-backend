@@ -22,6 +22,7 @@ const zodProductSchema = z.object({
 });
 
 export const addCategory = async (req: Request, res: Response) => {
+	const businessId = Number(req.headers.businessId);
 	const categoryDetails: categorySchema = req.body();
 	const validateCategory = zodCategorySchema.safeParse(categoryDetails);
 
@@ -29,14 +30,19 @@ export const addCategory = async (req: Request, res: Response) => {
 		try {
 			const existingCategory = await prisma.category.findUnique({
 				where: {
+					businessId,
 					hsn: validateCategory.data.hsn,
 				},
 			});
 			if (existingCategory) {
 				res.json({ msg: " Category already Exist", existingCategory });
 			} else {
+				const fullCategoryDetails = {
+					businessId,
+					...validateCategory.data,
+				};
 				const category = await prisma.category.create({
-					data: validateCategory.data,
+					data: fullCategoryDetails,
 				});
 				if (category) {
 					res.json({ msg: "Category created", category });

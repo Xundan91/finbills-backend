@@ -1,7 +1,14 @@
 import express from "express";
-import { addProducts } from "../controllers/inventoryController";
+import * as productEndPoints from "../controllers/inventoryController";
+import { sellItem } from "../controllers/invoiceController";
 const router = express.Router();
 
-router.post('/addItems/:businessId' , addProducts);
+router.post("/addItems/:businessId", productEndPoints.addProducts);
+router.post("/addCategory", productEndPoints.addCategory);
+router.get("/getCategory", productEndPoints.fetchCategory);
+router.post("/addProduct", productEndPoints.addProducts);
+router.get("/getProducts", productEndPoints.getProducts);
+router.put("/updateProduct", productEndPoints.updateProductDetail);
 
+router.post("/sellItem", sellItem);
 export default router;

@@ -197,3 +197,5 @@ export const updateProductDetail = async (req: Request, res: Response) => {
 		});
 	}
 };
+
+export const feedThroughInvoice = async (req: Request, res: Response) => {};

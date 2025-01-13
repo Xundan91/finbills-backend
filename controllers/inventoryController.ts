@@ -184,7 +184,7 @@ export const addProducts = async (
 };
 
 export const getProducts = async (req: Request, res: Response) => {
-	const businessId = Number(req.headers.businessId);
+	const businessId = Number(req.headers.businessid);
 	try {
 		const allProducts = await prisma.product.findMany({
 			where: {
@@ -208,47 +208,49 @@ export const getProducts = async (req: Request, res: Response) => {
 	}
 };
 
-// export const updateProductDetail = async (req: Request, res: Response) => {
-// 	const businessId = Number(req.headers.businessId);
-// 	const productDetail: productSchema = req.body();
-// 	const productId = productDetail.id;
-// 	try {
-// 		const allProducts = await prisma.product.findMany({
-// 			where: {
-// 				businessId,
-// 			},
-// 		});
-// 		if (allProducts) {
-// 			allProducts.forEach(async (product) => {
-// 				if (product.id == productId) {
-// 					const updateProduct = await prisma.product.update({
-// 						where: {
-// 							id: productId,
-// 						},
-// 						data: productDetail,
-// 					});
-// 					if (updateProduct) {
-// 						res.json({
-// 							msg: "Sucess",
-// 							updateProduct,
-// 						});
-// 					} else {
-// 						res.status(411).json({
-// 							msg: "Failed",
-// 						});
-// 					}
-// 				}
-// 			});
-// 		} else {
-// 			res.status(411).json({
-// 				msg: "Couldn't fetched Products",
-// 			});
-// 		}
-// 	} catch (err) {
-// 		res.status(500).json({
-// 			msg: `Error: ${err}`,
-// 		});
-// 	}
-// };
+export const updateProductDetail = async (req: Request, res: Response) => {
+	const businessId = Number(req.headers.businessid);
+	const productDetail: productSchema = req.body;
+	const validateProductDetail = zodProductSchema.safeParse(productDetail);
+	if (validateProductDetail.success) {
+		const productId = Number(req.params["productId"]);
+		try {
+			const product = await prisma.product.findUnique({
+				where: {
+					businessId,
+					id: productId,
+				},
+			});
+			if (product) {
+				const updatedProduct = await prisma.product.update({
+					where: {
+						businessId,
+						id: productId,
+					},
+					data: productDetail,
+				});
+				if (updatedProduct) {
+					res.json({
+						msg: "Sucess! Updated Product data",
+						updatedProduct,
+					});
+				}
+			} else {
+				res.status(411).json({
+					msg: "Failed",
+				});
+			}
+		} catch (err) {
+			console.log("Error " + err);
+			res.status(500).json({
+				msg: `Error: ${err}`,
+			});
+		}
+	} else {
+		res.status(500).json({
+			msg: "Failed",
+		});
+	}
+};
 
 export const feedThroughInvoice = async (req: Request, res: Response) => {};

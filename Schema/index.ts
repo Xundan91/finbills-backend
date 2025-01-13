@@ -7,7 +7,6 @@ export interface productSchema {
 	mrp: number;
 	gst_rate: number;
 	barcode: string;
-	opening_stock: number;
 	img_url: string;
 }
 

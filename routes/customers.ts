@@ -7,4 +7,5 @@ router.put("/addCustomer", customerEndpoint.addCustomer);
 router.get("/getCustomer", customerEndpoint.getCustomer);
 router.get("/allCustomer", customerEndpoint.getAllCustomer);
 
+router.post('/generate-invoice',customerEndpoint.genInvoice)
 export default router;

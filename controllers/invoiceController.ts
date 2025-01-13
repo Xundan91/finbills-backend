@@ -2,6 +2,11 @@ import prisma from "../prisma";
 import { Response, Request } from "express";
 import z, { custom } from "zod";
 
+import puppeteer from 'puppeteer';
+import fs from 'fs';
+import path from 'path';
+import { PDFDocument } from 'pdf-lib';
+
 interface customerSchema {
 	name: string;
 	email: string;
@@ -26,11 +31,128 @@ const customerZodSchema = z.object({
 	address: z.string().nullable().optional().default(null),
 });
 
-export const genInvoice = async (req: Request, res: Response) => {
-	try {
-		const buisnessId = req.params;
-		const {} = req.body;
-	} catch (err) {}
+interface InvoiceItem {
+    name: string;
+    quantity: number;
+    unit_cost: number;
+}
+
+interface InvoiceData {
+    from: string;
+    to: string;
+    logo: string;
+    number: string;
+    date: string;
+    due_date: string;
+    items: InvoiceItem[];
+    notes: string;
+    terms: string;
+}
+
+export const genInvoice = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { from, to, logo, number, date, due_date, items, notes, terms } = req.body as InvoiceData;
+
+        // Validate required fields
+        if (!number || !items?.length) {
+            res.status(400).json({ error: 'Invalid invoice data' });
+            return;
+        }
+
+        // Ensure download directory exists
+        const downloadDir = path.join(__dirname, '../public/downloads');
+        if (!fs.existsSync(downloadDir)) {
+            fs.mkdirSync(downloadDir, { recursive: true });
+        }
+
+        // Generate Invoice HTML
+        const invoiceHtml = `
+            <html>
+                <head>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1 { color: #333; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        table, th, td { border: 1px solid #ddd; }
+                        th, td { padding: 10px; text-align: left; }
+                        img { max-width: 150px; margin-bottom: 20px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Invoice #${number}</h1>
+                    <p>Date: ${date}</p>
+                    <p>Due Date: ${due_date}</p>
+                    <p><strong>From:</strong> ${from}</p>
+                    <p><strong>To:</strong> ${to}</p>
+                    <img src="${logo}" alt="Logo" />
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Quantity</th>
+                                <th>Unit Cost</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${items.map((item) => `
+                                <tr>
+                                    <td>${item.name}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>${item.unit_cost}</td>
+                                    <td>${item.quantity * item.unit_cost}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <p>${notes}</p>
+                    <p>${terms}</p>
+                </body>
+            </html>
+        `;
+
+        // Launch browser and create page
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+
+        try {
+            // Generate PNG
+            await page.setContent(invoiceHtml, { waitUntil: 'networkidle0' });
+            const pngPath = path.join(downloadDir, `invoice-${number}.png`);
+            await page.screenshot({ path: pngPath, fullPage: true });
+
+            // Generate PDF from PNG
+            const pngBytes = fs.readFileSync(pngPath);
+            const pdfDoc = await PDFDocument.create();
+            const pngImage = await pdfDoc.embedPng(pngBytes);
+
+            const pdfPage = pdfDoc.addPage([pngImage.width, pngImage.height]);
+            pdfPage.drawImage(pngImage, {
+                x: 0,
+                y: 0,
+                width: pngImage.width,
+                height: pngImage.height
+            });
+
+            const pdfBytes = await pdfDoc.save();
+            const pdfPath = path.join(downloadDir, `invoice-${number}.pdf`);
+            fs.writeFileSync(pdfPath, pdfBytes);
+
+            // Send response with file URLs
+            res.status(200).json({
+                pngUrl: `/downloads/invoice-${number}.png`,
+                pdfUrl: `/downloads/invoice-${number}.pdf`
+            });
+        } finally {
+            await browser.close();
+        }
+    } catch (error) {
+        console.error('Error generating invoice:', error);
+        res.status(500).json({
+            error: 'Failed to generate invoice',
+            details: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
 };
 
 export const sellItem = async (req: Request, res: Response) => {

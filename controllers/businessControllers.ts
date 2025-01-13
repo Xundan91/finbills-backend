@@ -6,7 +6,7 @@ const businessSchema = z.object({
 	name: z.string(),
 	address: z.string(),
 	email: z.string().email(),
-	phone: z.string().length(10),
+	phone: z.string(),
 });
 
 export const addBusiness = async (req: Request, res: Response) => {

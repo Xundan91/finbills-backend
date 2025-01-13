@@ -6,3 +6,5 @@ const router = Router();
 router.put("/addCustomer", customerEndpoint.addCustomer);
 router.get("/getCustomer", customerEndpoint.getCustomer);
 router.get("/allCustomer", customerEndpoint.getAllCustomer);
+
+export default router;

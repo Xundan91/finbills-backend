@@ -94,8 +94,13 @@ export const addCategory = async (
 };
 
 export const fetchCategory = async (req: Request, res: Response) => {
+	const businessId = Number(req.headers.businessid);
 	try {
-		const categories = await prisma.category.findMany({});
+		const categories = await prisma.category.findMany({
+			where: {
+				businessId,
+			},
+		});
 		if (categories) {
 			res.json({
 				msg: "Success",

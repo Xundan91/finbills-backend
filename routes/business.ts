@@ -3,7 +3,6 @@ import { addBusiness } from "../controllers/businessControllers";
 
 const router = express.Router();
 
-router.post("/addbusiness" , addBusiness);
-
+router.post("/addbusiness", addBusiness);
 
 export default router;

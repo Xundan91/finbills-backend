@@ -76,7 +76,7 @@ export const sellItem = async (req: Request, res: Response) => {
 						})
 					);
 				} catch (err) {
-					throw new Error(`Nhi hua Process Ma chud gyi iski`);
+					throw new Error(`Error: ${err}`);
 				}
 			} else {
 				res.status(411).json({

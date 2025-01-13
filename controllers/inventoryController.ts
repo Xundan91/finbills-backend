@@ -1,111 +1,207 @@
-// import { Request, Response } from 'express';
-//todo : request and response sei error aa rha hai
-
 import { z } from "zod";
+import { Response, Request } from "express";
 import prisma from "../prisma";
+import { productSchema, categorySchema } from "../Schema";
 
-const GstRateEnum = z.enum([
-	"ZERO",
-	"ZERO_POINT_ONE",
-	"ZERO_POINT_TWO_FIVE",
-	"ONE_POINT_FIVE",
-	"THREE",
-	"FIVE",
-	"SIX",
-	"TWELVE",
-	"THIRTEEN_POINT_EIGHT",
-	"FOURTEEN",
-	"EIGHTEEN",
-	"TWENTY_EIGHT",
-	"TAX_EXEMPTED",
-]);
-const UnitEnum = z.enum([
-	"PIECE",
-	"BOX",
-	"PACKET",
-	"PETI",
-	"BOTTLE",
-	"PACK",
-	"SET",
-	"GRAM",
-	"KG",
-	"BORA",
-	"ML",
-	"LITRE",
-	"MILLIMETER",
-	"CM",
-	"M",
-	"KM",
-	"INCH",
-	"FEET",
-	"SQ_INCH",
-	"SQ_FEET",
-	"SQ_MT",
-	"DOZEN",
-	"BUNDLE",
-	"POUCH",
-	"CARAT",
-	"POUND",
-	"PAIR",
-	"QUNITAL",
-	"TON",
-	"RATTI",
-	"TROLLEY_TRUCK",
-]);
+const zodCategorySchema = z.object({
+	name: z.string(),
+	hsn: z.string(),
+});
 
-const ProductSchema = z.object({
+const zodProductSchema = z.object({
+	id: z.number().optional(),
 	itemName: z.string().min(1, "Item name is required"),
 	description: z.string().min(1, "Description is required"),
-	p_price: z.number().optional().default(0),
-	s_price: z.number().optional().default(0),
-	mrp: z.number().optional().default(0),
-	gst_rate: GstRateEnum.optional().default("ZERO"),
+	p_price: z.number(),
+	s_price: z.number(),
+	stock_number: z.number(),
+	mrp: z.number(),
+	gst_rate: z.number(),
 	barcode: z.string().min(1, "Barcode is required"),
-	unit: UnitEnum.optional().default("PIECE"),
-	alert_quantity: z.number().optional().default(0),
-	opening_stock: z.number().optional().default(0),
-	op_stock_date: z.string().min(1, "Stock date is required"),
 	img_url: z.string().url("Invalid image URL"),
 });
 
-export const addProducts = async (req: any, res: any) => {
-	try {
-		const businessId = req.params.businessId;
-		const Id = Number(businessId);
-		const data = req.body;
+export const addCategory = async (req: Request, res: Response) => {
+	const businessId = Number(req.headers.businessId);
+	const categoryDetails: categorySchema = req.body();
+	const validateCategory = zodCategorySchema.safeParse(categoryDetails);
 
-		const validatedData = ProductSchema.parse(data);
-		const opStockDate = new Date(validatedData.op_stock_date);
-
-		const addedItem = await prisma.product.create({
-			data: {
-				business: { connect: { id: Id } },
-				itemName: validatedData.itemName,
-				description: validatedData.description,
-				p_price: validatedData.p_price,
-				s_price: validatedData.s_price,
-				mrp: validatedData.mrp,
-				gst_rate: validatedData.gst_rate,
-				barcode: validatedData.barcode,
-				unit: validatedData.unit,
-				alert_quantity: validatedData.alert_quantity,
-				opening_stock: validatedData.opening_stock,
-				op_stock_date: opStockDate,
-				img_url: validatedData.img_url,
-			},
-		});
-
-		console.log("Product added:", addedItem);
-		return res.status(201).json(addedItem);
-	} catch (err) {
-		if (err instanceof z.ZodError) {
-			console.log("Validation error:", err.errors);
-			return res
-				.status(400)
-				.json({ error: "Validation failed", details: err.errors });
+	if (validateCategory.success) {
+		try {
+			const existingCategory = await prisma.category.findUnique({
+				where: {
+					businessId,
+					hsn: validateCategory.data.hsn,
+				},
+			});
+			if (existingCategory) {
+				res.json({ msg: " Category already Exist", existingCategory });
+			} else {
+				const fullCategoryDetails = {
+					businessId,
+					...validateCategory.data,
+				};
+				const category = await prisma.category.create({
+					data: fullCategoryDetails,
+				});
+				if (category) {
+					res.json({ msg: "Category created", category });
+				} else {
+					res.status(411).json({
+						msg: "Failed",
+					});
+				}
+			}
+		} catch (err) {
+			console.log(`Error: ${err}`);
+			res.status(411).json({ msg: "Failed" });
 		}
-
-		console.error("Unexpected error:", err);
-		return res.status(500).json({ error: "Internal server error" });
+	} else {
+		res.status(411).json({ msg: "Validation failed" });
 	}
 };
+
+export const fetchCategory = async (req: Request, res: Response) => {
+	try {
+		const categories = await prisma.category.findMany({});
+		if (categories) {
+			res.json({
+				msg: "Success",
+				categories,
+			});
+		} else {
+			res.status(411).json({
+				msg: "Failed",
+			});
+		}
+	} catch (err) {
+		console.log(`Error: ${err}`);
+		res.status(500).json({
+			msg: "Failed",
+		});
+	}
+};
+
+export const addProducts = async (req: Request, res: Response) => {
+	const productDetails: productSchema = req.body();
+	const businessId = Number(req.headers.businessId);
+	const categoryId = Number(req.params["categoryId"]);
+	const validateProduct = zodProductSchema.safeParse(productDetails);
+
+	if (validateProduct.success) {
+		try {
+			const allProduct = await prisma.product.findMany({
+				where: {
+					businessId,
+				},
+			});
+			let itemExist: boolean = false;
+			allProduct.forEach(async (product) => {
+				if (product.itemName == validateProduct.data.itemName) {
+					itemExist = true;
+				}
+			});
+			if (itemExist) {
+				res.json({
+					msg: "Item already exist",
+				});
+			} else {
+				const fullProductDetail = {
+					businessId,
+					categoryId,
+					...validateProduct.data,
+				};
+				const product = await prisma.product.create({
+					data: fullProductDetail,
+				});
+				if (product) {
+					res.json({
+						msg: "Success",
+						product,
+					});
+				} else {
+					res.status(411).json({
+						msg: "Failed! product not created",
+					});
+				}
+			}
+		} catch (err) {
+			console.log(`Error: ${err}`);
+			res.status(500).json({ msg: "Failed" });
+		}
+	} else {
+		res.status(411).json({
+			msg: "Failed! Validation issue",
+		});
+	}
+};
+
+export const getProducts = async (req: Request, res: Response) => {
+	const businessId = Number(req.headers.businessId);
+	try {
+		const allProducts = await prisma.product.findMany({
+			where: {
+				businessId,
+			},
+		});
+		if (allProducts) {
+			res.json({
+				msg: "Sucess",
+				allProducts,
+			});
+		} else {
+			res.status(411).json({
+				msg: "Failed",
+			});
+		}
+	} catch (err) {
+		res.status(500).json({
+			msg: `Error: ${err}`,
+		});
+	}
+};
+
+export const updateProductDetail = async (req: Request, res: Response) => {
+	const businessId = Number(req.headers.businessId);
+	const productDetail: productSchema = req.body();
+	const productId = productDetail.id;
+	try {
+		const allProducts = await prisma.product.findMany({
+			where: {
+				businessId,
+			},
+		});
+		if (allProducts) {
+			allProducts.forEach(async (product) => {
+				if (product.id == productId) {
+					const updateProduct = await prisma.product.update({
+						where: {
+							id: productId,
+						},
+						data: productDetail,
+					});
+					if (updateProduct) {
+						res.json({
+							msg: "Sucess",
+							updateProduct,
+						});
+					} else {
+						res.status(411).json({
+							msg: "Failed",
+						});
+					}
+				}
+			});
+		} else {
+			res.status(411).json({
+				msg: "Couldn't fetched Products",
+			});
+		}
+	} catch (err) {
+		res.status(500).json({
+			msg: `Error: ${err}`,
+		});
+	}
+};
+
+export const feedThroughInvoice = async (req: Request, res: Response) => {};

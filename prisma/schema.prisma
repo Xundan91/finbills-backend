@@ -49,9 +49,12 @@ model Customer {
 
 model Category {
   id        Int       @id @default(autoincrement())
+  businessId Int
   name      String    @unique
+  hsn       String    @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  business  Business  @relation(fields: [businessId], references: [id])
   products  Product[]
 }
 
@@ -65,13 +68,8 @@ model Product {
   s_price         Float
   stock_number    Int?      @default(0)
   mrp             Float?    @default(0)
-  hsn             String?
-  gst_rate        GstRate   @default(ZERO)
+  gst_rate        Float   
   barcode         String?
-  unit            Unit      @default(PIECE)
-  alert_quantity  Float?    @default(0)
-  opening_stock   Float     @default(0)
-  op_stock_date   DateTime
   img_url         String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -91,6 +89,7 @@ model Business {
   updatedAt DateTime   @updatedAt
 
   customers Customer[]
+  category  Category[]
   products  Product[]
   ledgers   Ledger[]
 }

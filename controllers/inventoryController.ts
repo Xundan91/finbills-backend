@@ -23,34 +23,37 @@ const zodProductSchema = z.object({
 
 export const addCategory = async (req: Request, res: Response) => {
 	const businessId = Number(req.headers.businessId);
-	const categoryDetails: categorySchema = req.body();
+	const categoryDetails: categorySchema = req.body;
 	const validateCategory = zodCategorySchema.safeParse(categoryDetails);
 
 	if (validateCategory.success) {
 		try {
-			const existingCategory = await prisma.category.findUnique({
+			const existingCategories = await prisma.category.findMany({
 				where: {
 					businessId,
-					hsn: validateCategory.data.hsn,
 				},
 			});
-			if (existingCategory) {
-				res.json({ msg: " Category already Exist", existingCategory });
-			} else {
-				const fullCategoryDetails = {
+			if (existingCategories) {
+				const fullCategory = {
 					businessId,
 					...validateCategory.data,
 				};
-				const category = await prisma.category.create({
-					data: fullCategoryDetails,
+				const promiseCreatiton = existingCategories.map(async (category) => {
+					if (category.hsn !== categoryDetails.hsn) {
+						await prisma.category.create({
+							data: fullCategory,
+						});
+					}
 				});
-				if (category) {
-					res.json({ msg: "Category created", category });
-				} else {
-					res.status(411).json({
-						msg: "Failed",
-					});
-				}
+				await Promise.all(promiseCreatiton);
+
+				res.json({
+					msg: "Success",
+				});
+			} else {
+				res.status(500).json({
+					msg: `Couldn't fetch categories`,
+				});
 			}
 		} catch (err) {
 			console.log(`Error: ${err}`);

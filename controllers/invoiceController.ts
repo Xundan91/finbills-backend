@@ -336,37 +336,37 @@ export const addCustomer = async (
 	}
 };
 
-// export const getCustomer = async (req: Request, res: Response) => {
-// 	const customerDetails: fullCustomerDetailSchema = req.body;
-// 	if (customerDetails) {
-// 		const customer = await prisma.customer.findUnique({
-// 			where: {
-// 				email: customerDetails.email,
-// 			},
-// 		});
-// 		if (customer) {
-// 			res.json({
-// 				msg: "Success",
-// 				customer,
-// 			});
-// 		} else {
-// 			res.status(411).json({
-// 				msg: "Failed",
-// 			});
-// 		}
-// 	} else {
-// 		res.status(411).json({
-// 			msg: "Customer Detail not found",
-// 		});
-// 	}
-// 	try {
-// 	} catch (err) {
-// 		console.log(`Error ${err}`);
-// 		res.status(500).json({
-// 			msg: "Failed",
-// 		});
-// 	}
-// };
+export const getCustomer = async (req: Request, res: Response) => {
+	const customerId = Number(req.params["customerId"]);
+	if (customerId) {
+		const customer = await prisma.customer.findUnique({
+			where: {
+				id: customerId,
+			},
+		});
+		if (customer) {
+			res.json({
+				msg: "Success! Customer Found",
+				customer,
+			});
+		} else {
+			res.json({
+				msg: "Customer not found",
+			});
+		}
+	} else {
+		res.status(411).json({
+			msg: "Customer Detail not found",
+		});
+	}
+	try {
+	} catch (err) {
+		console.log(`Error ${err}`);
+		res.status(500).json({
+			msg: "Failed",
+		});
+	}
+};
 
 export const getAllCustomer = async (req: Request, res: Response) => {
 	try {

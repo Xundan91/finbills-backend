@@ -369,9 +369,14 @@ export const getCustomer = async (req: Request, res: Response) => {
 };
 
 export const getAllCustomer = async (req: Request, res: Response) => {
+	const businessId = Number(req.headers.businessid);
 	try {
 		const allCustomer: Array<fullCustomerDetailSchema> =
-			await prisma.customer.findMany();
+			await prisma.customer.findMany({
+				where: {
+					businessId,
+				},
+			});
 		if (allCustomer) {
 			res.json({
 				msg: "Success",

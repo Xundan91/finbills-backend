@@ -180,6 +180,9 @@ export const sellItem = async (req: Request, res: Response): Promise<any> => {
 							});
 						})
 					);
+					return res.json({
+						msg: "Success",
+					});
 				} catch (err) {
 					throw new Error(`Error: ${err}`);
 				}

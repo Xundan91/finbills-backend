@@ -1,27 +1,20 @@
 import prisma from "../prisma";
 import { Response, Request } from "express";
 import z, { custom } from "zod";
+import {
+	InvoiceData,
+	InvoiceItem,
+	ledgerItemInfoSchema,
+	customerSchema,
+} from "../Schema";
 
-import puppeteer from 'puppeteer';
-import fs from 'fs';
-import path from 'path';
-import { PDFDocument } from 'pdf-lib';
-
-interface customerSchema {
-	name: string;
-	email: string;
-	phone: string;
-	address?: string | null;
-}
+import puppeteer from "puppeteer";
+import fs from "fs";
+import path from "path";
+import { PDFDocument } from "pdf-lib";
 
 interface fullCustomerDetailSchema extends customerSchema {
 	businessId: number;
-}
-
-interface ledgerItemInfoSchema {
-	price: number;
-	quantity: number;
-	productId: number;
 }
 
 const customerZodSchema = z.object({
@@ -31,42 +24,28 @@ const customerZodSchema = z.object({
 	address: z.string().nullable().optional().default(null),
 });
 
-interface InvoiceItem {
-    name: string;
-    quantity: number;
-    unit_cost: number;
-}
+export const genInvoice = async (
+	req: Request,
+	res: Response
+): Promise<void> => {
+	try {
+		const { from, to, logo, number, date, due_date, items, notes, terms } =
+			req.body as InvoiceData;
 
-interface InvoiceData {
-    from: string;
-    to: string;
-    logo: string;
-    number: string;
-    date: string;
-    due_date: string;
-    items: InvoiceItem[];
-    notes: string;
-    terms: string;
-}
+		// Validate required fields
+		if (!number || !items?.length) {
+			res.status(400).json({ error: "Invalid invoice data" });
+			return;
+		}
 
-export const genInvoice = async (req: Request, res: Response): Promise<void> => {
-    try {
-        const { from, to, logo, number, date, due_date, items, notes, terms } = req.body as InvoiceData;
+		// Ensure download directory exists
+		const downloadDir = path.join(__dirname, "../public/downloads");
+		if (!fs.existsSync(downloadDir)) {
+			fs.mkdirSync(downloadDir, { recursive: true });
+		}
 
-        // Validate required fields
-        if (!number || !items?.length) {
-            res.status(400).json({ error: 'Invalid invoice data' });
-            return;
-        }
-
-        // Ensure download directory exists
-        const downloadDir = path.join(__dirname, '../public/downloads');
-        if (!fs.existsSync(downloadDir)) {
-            fs.mkdirSync(downloadDir, { recursive: true });
-        }
-
-        // Generate Invoice HTML
-        const invoiceHtml = `
+		// Generate Invoice HTML
+		const invoiceHtml = `
             <html>
                 <head>
                     <style>
@@ -95,14 +74,18 @@ export const genInvoice = async (req: Request, res: Response): Promise<void> => 
                             </tr>
                         </thead>
                         <tbody>
-                            ${items.map((item) => `
+                            ${items
+															.map(
+																(item) => `
                                 <tr>
                                     <td>${item.name}</td>
                                     <td>${item.quantity}</td>
                                     <td>${item.unit_cost}</td>
                                     <td>${item.quantity * item.unit_cost}</td>
                                 </tr>
-                            `).join('')}
+                            `
+															)
+															.join("")}
                         </tbody>
                     </table>
                     <p>${notes}</p>
@@ -111,57 +94,57 @@ export const genInvoice = async (req: Request, res: Response): Promise<void> => 
             </html>
         `;
 
-        // Launch browser and create page
-        const browser = await puppeteer.launch();
-        const page = await browser.newPage();
+		// Launch browser and create page
+		const browser = await puppeteer.launch();
+		const page = await browser.newPage();
 
-        try {
-            // Generate PNG
-            await page.setContent(invoiceHtml, { waitUntil: 'networkidle0' });
-            const pngPath = path.join(downloadDir, `invoice-${number}.png`);
-            await page.screenshot({ path: pngPath, fullPage: true });
+		try {
+			// Generate PNG
+			await page.setContent(invoiceHtml, { waitUntil: "networkidle0" });
+			const pngPath = path.join(downloadDir, `invoice-${number}.png`);
+			await page.screenshot({ path: pngPath, fullPage: true });
 
-            // Generate PDF from PNG
-            const pngBytes = fs.readFileSync(pngPath);
-            const pdfDoc = await PDFDocument.create();
-            const pngImage = await pdfDoc.embedPng(pngBytes);
+			// Generate PDF from PNG
+			const pngBytes = fs.readFileSync(pngPath);
+			const pdfDoc = await PDFDocument.create();
+			const pngImage = await pdfDoc.embedPng(pngBytes);
 
-            const pdfPage = pdfDoc.addPage([pngImage.width, pngImage.height]);
-            pdfPage.drawImage(pngImage, {
-                x: 0,
-                y: 0,
-                width: pngImage.width,
-                height: pngImage.height
-            });
+			const pdfPage = pdfDoc.addPage([pngImage.width, pngImage.height]);
+			pdfPage.drawImage(pngImage, {
+				x: 0,
+				y: 0,
+				width: pngImage.width,
+				height: pngImage.height,
+			});
 
-            const pdfBytes = await pdfDoc.save();
-            const pdfPath = path.join(downloadDir, `invoice-${number}.pdf`);
-            fs.writeFileSync(pdfPath, pdfBytes);
+			const pdfBytes = await pdfDoc.save();
+			const pdfPath = path.join(downloadDir, `invoice-${number}.pdf`);
+			fs.writeFileSync(pdfPath, pdfBytes);
 
-            // Send response with file URLs
-            res.status(200).json({
-                pngUrl: `/downloads/invoice-${number}.png`,
-                pdfUrl: `/downloads/invoice-${number}.pdf`
-            });
-        } finally {
-            await browser.close();
-        }
-    } catch (error) {
-        console.error('Error generating invoice:', error);
-        res.status(500).json({
-            error: 'Failed to generate invoice',
-            details: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
+			// Send response with file URLs
+			res.status(200).json({
+				pngUrl: `/downloads/invoice-${number}.png`,
+				pdfUrl: `/downloads/invoice-${number}.pdf`,
+			});
+		} finally {
+			await browser.close();
+		}
+	} catch (error) {
+		console.error("Error generating invoice:", error);
+		res.status(500).json({
+			error: "Failed to generate invoice",
+			details: error instanceof Error ? error.message : "Unknown error",
+		});
+	}
 };
 
-export const sellItem = async (req: Request, res: Response) => {
-	const businessId = Number(req.headers.businessId);
+export const sellItem = async (req: Request, res: Response): Promise<any> => {
+	const businessId = Number(req.headers.businessid);
 	const productsInfo: Array<ledgerItemInfoSchema> = req.body;
 
 	if (productsInfo) {
 		try {
-			const customerId = Number(req.params.customerId);
+			const customerId = Number(req.params["customerId"]);
 			let totalAmount = productsInfo.reduce(
 				(sum: number, product: ledgerItemInfoSchema) => sum + product.price,
 				0
@@ -279,41 +262,64 @@ export const sellItem = async (req: Request, res: Response) => {
 	// }
 };
 
-export const addCustomer = async (req: Request, res: Response) => {
+export const addCustomer = async (
+	req: Request,
+	res: Response
+): Promise<any> => {
 	try {
 		const customerDetails: customerSchema = req.body;
-		const businessId = Number(req.headers.businessId);
+		const businessId = Number(req.headers.businessid);
 		const validateCustomer = customerZodSchema.safeParse(customerDetails);
 
 		if (validateCustomer.success) {
-			const exists = await prisma.customer.findUnique({
+			const fullCustomerDetail = {
+				businessId,
+				...validateCustomer.data,
+			};
+			const allCustomer = await prisma.customer.findMany({
 				where: {
-					email: validateCustomer.data.email,
+					businessId,
 				},
 			});
 
-			if (exists) {
-				res.json({
-					msg: "Customer already present",
-					customer: exists,
+			if (allCustomer.length == 0) {
+				const customer = await prisma.customer.create({
+					data: fullCustomerDetail,
 				});
-			} else {
-				const customerFullDetail = {
-					...validateCustomer.data,
-					businessId,
-				};
 
-				const newCustomer = await prisma.customer.create({
-					data: customerFullDetail,
-				});
-				if (newCustomer) {
+				if (customer) {
 					res.json({
-						msg: "Sucess",
-						customer: newCustomer,
+						msg: "Success! Customer created",
+						customer,
 					});
 				} else {
 					res.status(411).json({
-						msg: "Customer not added",
+						msg: "Failed",
+					});
+				}
+			} else {
+				const customerExist = allCustomer.some(
+					(customer) => customer.email === validateCustomer.data.email
+				);
+
+				if (customerExist) {
+					return res.status(409).json({
+						msg: "Customer in business already exists",
+					});
+				}
+
+				const customer = await prisma.customer.create({
+					data: fullCustomerDetail,
+				});
+
+				if (customer) {
+					res.json({
+						msg: "Success",
+						customer,
+					});
+				} else {
+					res.status(411).json({
+						msg: "Failed! Customer in the business not created",
 					});
 				}
 			}
@@ -330,37 +336,37 @@ export const addCustomer = async (req: Request, res: Response) => {
 	}
 };
 
-export const getCustomer = async (req: Request, res: Response) => {
-	const customerDetails: fullCustomerDetailSchema = req.body;
-	if (customerDetails) {
-		const customer = await prisma.customer.findUnique({
-			where: {
-				email: customerDetails.email,
-			},
-		});
-		if (customer) {
-			res.json({
-				msg: "Success",
-				customer,
-			});
-		} else {
-			res.status(411).json({
-				msg: "Failed",
-			});
-		}
-	} else {
-		res.status(411).json({
-			msg: "Customer Detail not found",
-		});
-	}
-	try {
-	} catch (err) {
-		console.log(`Error ${err}`);
-		res.status(500).json({
-			msg: "Failed",
-		});
-	}
-};
+// export const getCustomer = async (req: Request, res: Response) => {
+// 	const customerDetails: fullCustomerDetailSchema = req.body;
+// 	if (customerDetails) {
+// 		const customer = await prisma.customer.findUnique({
+// 			where: {
+// 				email: customerDetails.email,
+// 			},
+// 		});
+// 		if (customer) {
+// 			res.json({
+// 				msg: "Success",
+// 				customer,
+// 			});
+// 		} else {
+// 			res.status(411).json({
+// 				msg: "Failed",
+// 			});
+// 		}
+// 	} else {
+// 		res.status(411).json({
+// 			msg: "Customer Detail not found",
+// 		});
+// 	}
+// 	try {
+// 	} catch (err) {
+// 		console.log(`Error ${err}`);
+// 		res.status(500).json({
+// 			msg: "Failed",
+// 		});
+// 	}
+// };
 
 export const getAllCustomer = async (req: Request, res: Response) => {
 	try {

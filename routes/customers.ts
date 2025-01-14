@@ -3,9 +3,9 @@ import * as customerEndpoint from "../controllers/invoiceController";
 
 const router = Router();
 
-router.put("/addCustomer", customerEndpoint.addCustomer);
-router.get("/getCustomer", customerEndpoint.getCustomer);
+router.post("/addCustomer", customerEndpoint.addCustomer);
+// router.get("/getCustomer", customerEndpoint.getCustomer);
 router.get("/allCustomer", customerEndpoint.getAllCustomer);
 
-router.post('/generate-invoice',customerEndpoint.genInvoice)
+router.post("/generate-invoice", customerEndpoint.genInvoice);
 export default router;

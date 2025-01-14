@@ -36,7 +36,7 @@ model Ledger {
 model Customer {
   id         Int      @id @default(autoincrement())
   name       String
-  email      String   @unique
+  email      String   
   phone      String
   address    String?
   createdAt  DateTime @default(now())

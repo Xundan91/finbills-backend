@@ -9,5 +9,5 @@ router.post("/addProduct/:categoryId", productEndPoints.addProducts);
 router.get("/getProducts", productEndPoints.getProducts);
 router.put("/updateProduct/:productId", productEndPoints.updateProductDetail);
 
-router.post("/sellItem", sellItem);
+router.post("/sellItem/:customerId", sellItem);
 export default router;

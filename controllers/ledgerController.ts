@@ -12,6 +12,9 @@ export const ledgerofCustomer = async (
 			where: {
 				businessId,
 			},
+			include: {
+				ledgerItems: true,
+			},
 		});
 		if (ledger) {
 			const customerLedger = ledger.find(
@@ -46,6 +49,9 @@ export const ledgerOfBusiness = async (req: Request, res: Response) => {
 		const ledger = await prisma.ledger.findMany({
 			where: {
 				businessId,
+			},
+			include: {
+				ledgerItems: true,
 			},
 		});
 		if (ledger) {
